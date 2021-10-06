@@ -3,13 +3,13 @@
 
 ---
 
-###How to use: 
+### How to use: 
 ```sh
 git clone https://github.com/TheSainEyereg/ShareX-NodeJS-uploader.git
 cd ShareX-NodeJS-uploader
 npm i && npm start
 ```
-###`Config.json` example:
+### `Config.json` example:
 ```json
 {
     "port": 5050,
@@ -19,6 +19,6 @@ npm i && npm start
     "uploadHome": false
 }
 ```
-Flag `uploadHome` enables home dir as start point. Example:
-**With flag:** `/home/ubuntu/uploads`
-**Without flag:** `/home/ubuntu/NodeProjects/ShareX-NodeJS-uploader/uploads`
+Flag `uploadHome` enables home dir as start point. Example:  
+**With flag:** `/home/ubuntu/uploads`  
+**Without flag:** `/home/ubuntu/NodeProjects/ShareX-NodeJS-uploader/uploads`  
