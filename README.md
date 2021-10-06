@@ -7,7 +7,7 @@
 ```sh
 git clone https://github.com/TheSainEyereg/ShareX-NodeJS-uploader.git
 cd ShareX-NodeJS-uploader
-npm i && npm start
+npm i && node index
 ```
 ### `Config.json` example:
 ```json
