@@ -1,0 +1,15 @@
+﻿{
+  "Version": "13.6.1",
+  "Name": "Example API",
+  "DestinationType": "ImageUploader, TextUploader, FileUploader",
+  "RequestMethod": "POST",
+  "RequestURL": "https://api.example.com/upload",
+  "Body": "MultipartFormData",
+  "Arguments": {
+    "key": "1337"
+  },
+  "FileFormName": "file",
+  "URL": "https://example.com/$json:filename$",
+  "DeletionURL": "https://api.example.com$json:delete$",
+  "ErrorMessage": "$json:error$"
+}
