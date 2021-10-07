@@ -1,7 +1,14 @@
+const os = require("os");
 const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const multer = require("multer");
 const express = require("express");
+
+const upload = multer({storage: multer.memoryStorage()});
 process.on("unhandledRejection", e => {console.error(e)});
 let config = require("./config.json"); // let cuz it should update in realtime
+let filedir = (config.uploadHome ? os.homedir() : ".") + config.uploadDir + "/";
 
 let fsout;
 fs.watch("./config.json", (event,fn) => {
@@ -11,6 +18,7 @@ fs.watch("./config.json", (event,fn) => {
             console.log("Updated config.json!")
             delete require.cache[require.resolve("./config.json")];
             config = require("./config.json");
+            filedir = (config.uploadHome ? os.homedir() : ".") + config.uploadDir + "/";
             fsout=0
         }, 100)
     }
@@ -22,16 +30,13 @@ app.listen(config.port, e => {
     if (e) {console.error(e); return process.exit(1)}
     console.log("Server started at http://127.0.0.1:"+config.port);
 });
+app.use((req, res, next) => {
+    res.setHeader("Olejka-Service", "API")
+    next();
+});
 
 app.get("/", (req,res) => res.send("ShareX file uploader API"))
 
-/*   ~~~   FILES   ~~~   */
-const os = require("os");
-const filedir = (config.uploadHome ? os.homedir() : ".") + config.uploadDir + "/";
-const path = require("path");
-const crypto = require("crypto");
-const multer = require("multer");
-const upload = multer({storage: multer.memoryStorage()});
 app.post("/upload/", upload.single("file") ,async (req,res) => {
     if (!fs.existsSync(filedir)) fs.mkdirSync(filedir);
     if (!req.body.key) return res.status(401).json({error: "No upload key provided!"});
@@ -40,15 +45,15 @@ app.post("/upload/", upload.single("file") ,async (req,res) => {
     const file = req.file;
     const ext= path.extname(file.originalname);
     if (!config.uploadExts.includes(ext.slice(1))) return res.status(406).json({error: "File format is not allowed!"});
-    const md5sum = crypto.createHash("md5").update(file.buffer).digest("hex");
-    const filename = md5sum.slice(-8)+ext;
+    const md5sum = crypto.createHash("md5").update(file.buffer).digest();
+    const filename = md5sum.toString("hex").slice(-10)+ext;
     if (!fs.existsSync(filedir+filename)) fs.writeFileSync(filedir+filename, file.buffer);
-    const md5stamp = crypto.createHash("md5").update(fs.statSync(filedir+filename).birthtime.getTime().toString()).digest("hex");
+    const md5stamp = crypto.createHash("md5").update(fs.statSync(filedir+filename).birthtime.getTime().toString()).digest("base64url");
     res.json({
         filename: filename,
         original: file.originalname,
         get: `/get/${filename}`,
-        delete: `/delete/${filename}/${md5sum.slice(15,21)}_${md5stamp.slice(18,26)}`
+        delete: `/delete/${filename}/${md5sum.toString("base64url").slice(5,15)+md5stamp.slice(12,18)}`
     })
 })
 const mime = require("mime");
@@ -65,11 +70,10 @@ app.get("/get/:filename", async (req, res) => {
 app.get("/delete/:filename/:key?", async (req,res) => {
     const file = filedir + req.params.filename;
     if (!fs.existsSync(file)) return res.sendStatus(404);
-    const md5sum = crypto.createHash("md5").update(fs.readFileSync(file)).digest("hex");
-    const md5stamp = crypto.createHash("md5").update(fs.statSync(file).birthtime.getTime().toString()).digest("hex");
-    if (req.params.key !== `${md5sum.slice(15,21)}_${md5stamp.slice(18,26)}`) return res.status(403).json({error: "Wrong delete key"});
+    const md5sum = crypto.createHash("md5").update(fs.readFileSync(file)).digest("base64url");
+    const md5stamp = crypto.createHash("md5").update(fs.statSync(file).birthtime.getTime().toString()).digest("base64url");
+    if (req.params.key.slice(0,10) != md5sum.slice(5,15) || req.params.key.slice(-6) != md5stamp.slice(12,18)) return res.status(403).json({error: "Wrong delete key"});
+    console.log()
     fs.rmSync(file);
-    res.json({
-        filename: req.params.filename
-    })
+    res.sendStatus(200);
 })
