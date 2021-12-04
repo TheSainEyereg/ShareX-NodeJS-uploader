@@ -9,7 +9,7 @@ git clone https://github.com/TheSainEyereg/ShareX-NodeJS-uploader.git
 cd ShareX-NodeJS-uploader
 npm i && node index
 ```
-### `Config.json` example:
+### `config.json` example:
 ```json
 {
     "port": 5050,
