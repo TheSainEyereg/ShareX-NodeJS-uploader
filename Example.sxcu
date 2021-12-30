@@ -9,7 +9,7 @@
     "key": "1337"
   },
   "FileFormName": "file",
-  "URL": "https://example.com/$json:filename$",
+  "URL": "https://example.com$json:filename$",
   "DeletionURL": "https://api.example.com$json:delete$",
   "ErrorMessage": "$json:error$"
 }
