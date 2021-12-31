@@ -50,7 +50,7 @@ app.use((req, res, next) => {
 	next();
 });
 
-app.get("/", (req,res) => res.setHeader("Content-Type", "application/json").send("ShareX file uploader API"))
+app.get("/", (req,res) => res.setHeader("Content-Type", "text/plain").send("ShareX file uploader API"))
 
 app.post("/upload/", upload.single("file"), async (req,res, next) => {
 	if (!fs.existsSync(filePath)) fs.mkdirSync(filePath);
