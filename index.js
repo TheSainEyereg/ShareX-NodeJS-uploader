@@ -51,12 +51,20 @@ app.use((req, res, next) => {
 
 app.get("/", (req,res) => res.send("ShareX file uploader API"))
 
-app.post("/upload/", upload.single("file"), async (req,res) => {
+app.post("/upload/", upload.single("file"), async (req,res, next) => {
     if (!fs.existsSync(filePath)) fs.mkdirSync(filePath);
-    if (!req.body.key) return res.status(401).json({error: "No upload key provided!"});
+	
+	if (!req.headers["content-length"]) return res.status(400).json({error: "Content-length header should be specified!"});
+	if (parseInt(req.headers["content-length"]) < 53) return res.status(400).json({error: "Content-length is too small!"});
+
+	if (!req.headers["content-type"]?.includes("multipart/form-data")) return res.status(400).json({error: "Invalid content-type! Body not a multipart form-data!"});
+
+	if (!req.body.key) return res.status(401).json({error: "No upload key provided!"});
     if (req.body.key !== config.uploadKey) return res.status(403).json({error: "Wrong upload key!"});
-    if (!req.file) return res.status(406).json({error: "Invalid form data!"});
-    const file = req.file;
+
+	if (!req.file) return res.status(406).json({error: "No file provided!"});
+
+	const file = req.file;
     const ext= path.extname(file.originalname);
     if (!config.uploadExts.includes(ext.slice(1))) return res.status(415).json({error: "File format is not allowed!"});
     const md5sum = crypto.createHash("md5").update(file.buffer).digest();
@@ -69,7 +77,16 @@ app.post("/upload/", upload.single("file"), async (req,res) => {
         get: `/get/${filename}`,
         delete: `/delete/${filename}/${md5sum.toString("base64url").slice(5,15)+md5stamp.slice(12,18)}`
     })
-})
+}, async (e, req, res, next) => {
+	switch (e.toString()) {
+		case "Error: Unexpected end of multipart data":
+			console.log("Unexpected end of multipart data (wrong Content-Length?)");
+			return res.status(400).json({error: "Unexpected end of multipart data (wrong Content-Length?)"});
+		default:
+			console.log("Unknown error: "+e);
+			return res.status(500).json({error: "Unknown server error!"});
+	}
+});
 const mime = require("mime");
 app.get("/get/:filename", async (req, res) => {
     const file = filePath + req.params.filename;
@@ -87,7 +104,6 @@ app.get("/delete/:filename/:key?", async (req,res) => {
     const md5sum = crypto.createHash("md5").update(fs.readFileSync(file)).digest("base64url");
     const md5stamp = crypto.createHash("md5").update(fs.statSync(file).birthtime.getTime().toString()).digest("base64url");
     if (req.params.key.slice(0,10) != md5sum.slice(5,15) || req.params.key.slice(-6) != md5stamp.slice(12,18)) return res.status(403).json({error: "Wrong delete key"});
-    console.log()
     fs.rmSync(file);
     res.sendStatus(200);
 })
