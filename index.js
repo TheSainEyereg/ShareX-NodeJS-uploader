@@ -8,7 +8,7 @@ const express = require("express");
 const upload = multer({storage: multer.memoryStorage()});
 process.on("unhandledRejection", e => {console.error(e)});
 let config, filePath;
-let loadConfig = () => {
+const loadConfig = () => {
 	if (fs.existsSync("./config.json")) {
 		config = {error: "No config file found! Create one like GitHub example."};
 	}
